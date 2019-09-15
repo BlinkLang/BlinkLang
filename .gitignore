@@ -2,3 +2,7 @@
 /out/
 /Blink.iml
 /.idea
+!/out
+/out/production
+!/src/com
+/src/META-INF

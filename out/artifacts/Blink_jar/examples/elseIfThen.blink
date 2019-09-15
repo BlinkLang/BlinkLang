@@ -1,0 +1,12 @@
+// An example script showing how if structures work in Blink
+var needMilk = "no";
+
+if (needMilk == "yes") {
+    // If the 'needMilk' variable equals "yes" 
+    // -> "Gotta add 'milk' to the shopping cart!
+    print "Gotta add 'milk' to the shopping cart!";
+} else {
+    // If the 'needMilk' variable is set to anything else
+    // -> All good.
+    print "All good.";
+}

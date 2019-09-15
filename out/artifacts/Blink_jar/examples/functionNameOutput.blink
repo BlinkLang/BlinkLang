@@ -1,0 +1,10 @@
+// Blink Lang 1.0
+// This example prints 'Oh hi', the name defined when you invoke the function and an exclamation
+// mark.
+
+fun printName (name) {
+    print "Oh hi, " + name + "!";
+}
+
+// -> Oh hi, John Doe!
+printName("John Doe");
