@@ -28,7 +28,15 @@ public class Blink {
 
     private static void runFile(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
+
+        clearScreen();
+        System.out.println();
+        System.out.println(" Blink JVM 1.0.0");
+        System.out.println();
+
         run(new String(bytes, Charset.defaultCharset()));
+
+        System.out.println();
 
         if (hadError) System.exit(65);
         if (hadRuntimeError) System.exit(70);
@@ -38,7 +46,13 @@ public class Blink {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
 
-        for (;;) {
+        clearScreen();
+        System.out.println();
+        System.out.println("Blink JVM 1.0.0");
+        System.out.println("Exit anytime by pressing CTRL + C.");
+        System.out.println();
+
+        while (true) {
             System.out.print("> ");
             run(reader.readLine());
             hadError = false;
@@ -82,5 +96,15 @@ public class Blink {
     static void runtimeError(RuntimeError error) {
         System.out.println(error.getMessage() + "\n[line " + error.token.line + "]");
         hadRuntimeError = true;
+    }
+
+    public static void clearScreen(){
+        //Clears Screen in java
+        try {
+            if (System.getProperty("os.name").contains("Windows"))
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            else
+                Runtime.getRuntime().exec("clear");
+        } catch (IOException | InterruptedException ex) {}
     }
 }
