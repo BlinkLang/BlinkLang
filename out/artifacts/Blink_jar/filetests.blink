@@ -1,0 +1,5 @@
+fun nigger(niggerName, niggerSurname, niggerSpecies) {
+	print(niggerName + " " + niggerSurname + " " + niggerSpecies);
+}
+
+nigger("andre", "monteiro", "caucasian");

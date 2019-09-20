@@ -1,11 +1,9 @@
 package com.blink.Blink;
 
+import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Date;
+import java.util.*;
+import java.io.BufferedWriter;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     final Environment globals = new Environment();
@@ -13,6 +11,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private final Map<Expr, Integer> locals = new HashMap<>();
 
     Interpreter() {
+        // Returns a formatted date and time string
         globals.define("time", new BlinkCallable() {
             @Override
             public int arity() { return 0; }
@@ -27,6 +26,115 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             @Override
             public String toString() { return "<native fn>"; }
         });
+
+        // Works as intended. Specify a file.extension inside the native and if you print it it will return the contents.
+        globals.define("readFile", new BlinkCallable() {
+            @Override
+            public int arity() { return 1; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String file = (String) arguments.get(0);
+                try(FileReader fr = new FileReader(file); BufferedReader br = new BufferedReader(fr)) {
+                    StringBuilder builder = new StringBuilder();
+                    String line;
+                    while((line = br.readLine()) != null) builder.append(line).append("\n");
+                    return builder.toString();
+                } catch(Exception ex) {
+                    return new Error("The specified file ('" + file + "') is either not on the path or is non-existent");
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        // Writes to a file. You just need to pass the file.extension and contents
+        globals.define("writeFile", new BlinkCallable() {
+            @Override
+            public int arity() { return 2; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String file = (String) arguments.get(0);
+                String contents = (String) arguments.get(1);
+                try {
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+                    writer.write(contents);
+                    writer.close();
+                    return "Wrote to file '" + file + "'.";
+                } catch(Exception ex) {
+                    return new Error("The specified file ('" + file + "') is either not on the path or is non-existent");
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        // Creates a file, you just need to specify the file name.extension
+        globals.define("createFile", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 1;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String file = (String) arguments.get(0);
+                try {
+                    File newFile = new File(file);
+                    if (!newFile.exists()) {
+                        newFile.createNewFile();
+                        return "Created file '" + file + "'.";
+                    } else {
+                        throw new Error("The specified file '" + file + "' already exists.");
+                    }
+                } catch (Exception ex) { return null; }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        // RNG number calculation
+        globals.define("randomNumber", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 2;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                double firstArg = (Double) arguments.get(0);
+                int floor = (int) firstArg;
+                double secondArg = (Double) arguments.get(1);
+                int ceiling = (int) secondArg;
+
+                int rnd = (int) (Math.random()*ceiling+floor);
+                return rnd;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        // Import functions from another .blink file over to where this native is being called in
+        // Neat, right?
+        // Oh and this was engineered by the master mind of the BlinkLang org, xaanit
+        globals.define("import", new BlinkCallable() {
+            @Override
+            public int arity() { return 2; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return null;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
     }
 
     void interpret(List<Stmt> statements) {
