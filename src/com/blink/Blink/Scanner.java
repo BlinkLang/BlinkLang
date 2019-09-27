@@ -34,6 +34,7 @@ class Scanner {
         keywords.put("true",   TRUE);
         keywords.put("var",    VAR);
         keywords.put("while",  WHILE);
+        keywords.put("inherits", INHERITS);
     }
 
     Scanner(String source) {
