@@ -1,18 +1,19 @@
 package com.blink.Blink;
 
 enum TokenType {
-    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
+    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,  // punctuation
+    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, // punctuation
 
-    BANG, BANG_EQUAL,
-    EQUAL, EQUAL_EQUAL,
-    GREATER, GREATER_EQUAL,
-    LESS, LESS_EQUAL,
+    BANG, BANG_EQUAL, // operators
+    EQUAL, EQUAL_EQUAL, // operators
+    GREATER, GREATER_EQUAL, // operators
+    LESS, LESS_EQUAL, // operators
 
-    IDENTIFIER, STRING, NUMBER,
+    IDENTIFIER, STRING, NUMBER, // Types (these are used in the code and not in the actual .blink files)
 
-    AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-    PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
+    AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, // Keywords
+    PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE, // Keywords
+    INHERITS, // Keywords
 
-    EOF
+    EOF // Just identifies the End of File (this isn't used in blink files)
 }
