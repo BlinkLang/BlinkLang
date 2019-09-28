@@ -4,18 +4,20 @@ import java.util.List;
 
 abstract class Expr {
   interface Visitor<R> {
-    default R visitAssignExpr(Assign expr) {return null;}
-    default R visitBinaryExpr(Binary expr) {return null;}
-    default R visitCallExpr(Call expr) {return null;}
-    default R visitGetExpr(Get expr) {return null;}
-    default R visitGroupingExpr(Grouping expr) {return null;}
-    default R visitLiteralExpr(Literal expr) {return null;}
-    default R visitLogicalExpr(Logical expr) {return null;}
-    default R visitSetExpr(Set expr) {return null;}
-    default R visitSuperExpr(Super expr) {return null;}
-    default R visitThisExpr(This expr) {return null;}
-    default R visitUnaryExpr(Unary expr) {return null;}
-    default R visitVariableExpr(Variable expr) {return null;}
+    R visitAssignExpr(Assign expr);
+    R visitBinaryExpr(Binary expr);
+    R visitCallExpr(Call expr);
+    R visitGetExpr(Get expr);
+    R visitGroupingExpr(Grouping expr);
+    R visitLiteralExpr(Literal expr);
+    R visitLogicalExpr(Logical expr);
+    R visitSetExpr(Set expr);
+    R visitSuperExpr(Super expr);
+    R visitThisExpr(This expr);
+    R visitUnaryExpr(Unary expr);
+    R visitVariableExpr(Variable expr);
+    R visitArrayExpr(Array expr);
+    R visitSubscriptExpr(Subscript expr);
   }
   static class Assign extends Expr {
     Assign(Token name, Expr value) {
@@ -172,6 +174,32 @@ abstract class Expr {
     }
 
     final Token name;
+  }
+  static class Array extends Expr {
+    Array(List<Expr> values) {
+      this.values = values;
+    }
+
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitArrayExpr(this);
+    }
+
+    final List<Expr> values;
+  }
+  static class Subscript extends Expr {
+    Subscript(Expr object, Token closeBracket, Expr index) {
+      this.object = object;
+      this.closeBracket = closeBracket;
+      this.index = index;
+    }
+
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitSubscriptExpr(this);
+    }
+
+    final Expr object;
+    final Token closeBracket;
+    final Expr index;
   }
 
   abstract <R> R accept(Visitor<R> visitor);

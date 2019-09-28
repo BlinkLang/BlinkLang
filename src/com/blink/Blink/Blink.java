@@ -53,13 +53,13 @@ public class Blink {
         System.out.println();
 
         while (true) {
-            System.out.print("> ");
-            run(reader.readLine());
+            System.out.print("Blink > ");
+            run(reader.readLine() + "\n");
             hadError = false;
         }
     }
 
-    private static void run(String source) {
+    public static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
 

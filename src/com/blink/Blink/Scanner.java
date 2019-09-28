@@ -14,27 +14,31 @@ class Scanner {
     private int current = 0;
     private int line = 1;
 
+    private int openParen = 0;
+    private int openSquareBrackets = 0;
+
     private static final Map<String, TokenType> keywords;
 
     static {
         keywords = new HashMap<>();
-        keywords.put("and",    AND);
-        keywords.put("class",  CLASS);
-        keywords.put("else",   ELSE);
-        keywords.put("false",  FALSE);
-        keywords.put("for",    FOR);
-        keywords.put("fun",    FUN);
-        keywords.put("if",     IF);
-        keywords.put("nil",    NIL);
-        keywords.put("or",     OR);
-        keywords.put("print",  PRINT);
+        keywords.put("and", AND);
+        keywords.put("class", CLASS);
+        keywords.put("else", ELSE);
+        keywords.put("false", FALSE);
+        keywords.put("for", FOR);
+        keywords.put("function", FUN);
+        keywords.put("if", IF);
+        keywords.put("null", NIL);
+        keywords.put("or", OR);
+        keywords.put("print", PRINT);
         keywords.put("return", RETURN);
-        keywords.put("super",  SUPER);
-        keywords.put("this",   THIS);
-        keywords.put("true",   TRUE);
-        keywords.put("var",    VAR);
-        keywords.put("while",  WHILE);
+        keywords.put("super", SUPER);
+        keywords.put("this", THIS);
+        keywords.put("true", TRUE);
+        keywords.put("var", VAR);
+        keywords.put("while", WHILE);
         keywords.put("inherits", INHERITS);
+        keywords.put("import", IMPORT);
     }
 
     Scanner(String source) {
@@ -72,10 +76,12 @@ class Scanner {
     private void scanToken() {
         char c = advance();
         switch (c) {
-            case '(' : addToken(LEFT_PAREN); break;
-            case ')' : addToken(RIGHT_PAREN); break;
+            case '(' : addToken(LEFT_PAREN); ++openParen; break;
+            case ')' : addToken(RIGHT_PAREN); --openParen; break;
             case '{' : addToken(LEFT_BRACE); break;
             case '}' : addToken(RIGHT_BRACE); break;
+            case '[' : addToken(LEFT_SQUARE); ++openSquareBrackets; break;
+            case ']' : addToken(RIGHT_SQUARE); --openSquareBrackets; break;
             case ',' : addToken(COMMA); break;
             case '.' : addToken(DOT); break;
             case '-' : addToken(MINUS); break;
@@ -89,23 +95,35 @@ class Scanner {
             case '/':
                 if (match('/')) {
                     while (peek() != '\n' && !isAtEnd()) advance();
+                } else if(match('*')) {
+                    blockComment();
                 } else {
                     addToken(SLASH);
                 }
                 break;
-            case ' ' :
-            case '\r' :
-            case '\t' :
-                break;
-            case '\n' :
-                line++;
-                break;
+
             case '"' : string(); break;
+
+            case '\n':
+                ++line;
+                Token lastToken = tokens.get(tokens.size() - 1);
+                if (openParen == 0 &&
+                        lastToken.type != SEMICOLON &&
+                        lastToken.type != LEFT_BRACE &&
+                        lastToken.type != RIGHT_BRACE)
+                    addToken(SEMICOLON);
+
+                break;
+
+            case ' ':
+            case '\r':
+            case '\t':
+                break;
 
             default:
                 if (isDigit(c)) {
                     number();
-                } else if (isAlpha(c)) {
+                } else if (isAlphaOrUnderscore(c)) {
                     identifier();
                 } else {
                     Blink.error(line, "Unexpected character.");
@@ -114,8 +132,33 @@ class Scanner {
         }
     }
 
+    private void blockComment() {
+        while(peek() != '*' && !isAtEnd()) {
+            if (peek() == '\n') ++line;
+            if (peek() == '/') {
+                if (peekNext() == '*') {
+                    advance();
+                    advance();
+                    blockComment();
+                }
+            }
+            advance();
+        }
+
+        if (isAtEnd()) {
+            Blink.error(line, "Unterminated block comment.");
+        }
+
+        advance();
+
+        if (!match('/')) {
+            advance();
+            blockComment();
+        }
+    }
+
     private void identifier() {
-        while (isAlphaNumeric(peek())) advance();
+        while (isAlphaNumericOrUnderscore(peek())) advance();
 
         String text = source.substring(start, current);
 
@@ -171,14 +214,18 @@ class Scanner {
         return source.charAt(current + 1);
     }
 
-    private boolean isAlpha(char c) {
+    private char beforePrevious() {
+        return source.charAt(current - 2);
+    }
+
+    private boolean isAlphaOrUnderscore(char c) {
         return (c >= 'a' && c <= 'z') ||
                 (c >= 'A' && c <= 'Z') ||
                 c == '_';
     }
 
-    private boolean isAlphaNumeric(char c) {
-        return isAlpha(c) || isDigit(c);
+    private boolean isAlphaNumericOrUnderscore(char c) {
+        return isAlphaOrUnderscore(c) || isDigit(c);
     }
 
     private boolean isDigit(char c) {

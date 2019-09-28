@@ -116,6 +116,12 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitImportStmt(Stmt.Import stmt) {
+        resolve(stmt.module);
+        return null;
+    }
+
+    @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
         if (currentFunction == FunctionType.NONE) {
             Blink.error(stmt.keyword, "Cannot return from top-level code.");
@@ -147,6 +153,23 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     public Void visitWhileStmt(Stmt.While stmt) {
         resolve(stmt.condition);
         resolve(stmt.body);
+        return null;
+    }
+
+    @Override
+    public Void visitArrayExpr(Expr.Array expr) {
+        if (expr.values != null) {
+            for (Expr value : expr.values) {
+                resolve(value);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitSubscriptExpr(Expr.Subscript expr) {
+        resolve(expr.object);
+        resolve(expr.index);
         return null;
     }
 

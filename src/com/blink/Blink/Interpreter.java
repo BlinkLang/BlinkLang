@@ -119,15 +119,25 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             public String toString() { return "<native fn>"; }
         });
 
-        // Import functions from another .blink file over to where this native is being called in
-        // Neat, right?
-        // Oh and this was engineered by the master mind of the BlinkLang org, xaanit
-        globals.define("import", new BlinkCallable() {
+        // Return the size of an array
+        globals.define("sizeof", new BlinkCallable() {
             @Override
-            public int arity() { return 2; }
+            public int arity() {
+                return 1;
+            }
 
             @Override
             public Object call(Interpreter interpreter, List<Object> arguments) {
+                Object object = arguments.get(0);
+
+                if (object instanceof String) {
+                    return ((String) object).length();
+                }
+
+                if (object instanceof  List) {
+                    return ((List) object).size();
+                }
+
                 return null;
             }
 
@@ -145,6 +155,17 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } catch (RuntimeError error) {
             Blink.runtimeError(error);
         }
+    }
+
+    @Override
+    public Object visitArrayExpr(Expr.Array expr) {
+        List<Object> values = new ArrayList<>();
+        if (expr.values != null) {
+            for (Expr value : expr.values) {
+                values.add(evaluate(value));
+            }
+        }
+        return values;
     }
 
     @Override
@@ -254,6 +275,19 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private String stringify(Object object) {
         if (object == null) return "nil";
 
+        if (object instanceof List) {
+            String text = "[";
+            List<Object> list = (List<Object>)object;
+            for (int i = 0; i < list.size(); i++) {
+                text += stringify(list.get(i));
+                if (i != list.size() - 1) {
+                    text += ", ";
+                }
+            }
+            text += "]";
+            return text;
+        }
+
         if (object instanceof Double) {
             String text = object.toString();
             if (text.endsWith(".0")) {
@@ -355,6 +389,30 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } else if (stmt.elseBranch != null) {
             execute(stmt.elseBranch);
         }
+
+        return null;
+    }
+
+    @Override
+    public Void visitImportStmt(Stmt.Import stmt) {
+        Object module = evaluate(stmt.module);
+        if (!(module instanceof String)) {
+            throw new RuntimeError(stmt.keyword, "Module name must be a string.");
+        }
+
+        String source = "";
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader((String)module));
+            String currentLine;
+            while ((currentLine = br.readLine()) != null) {
+                source += currentLine + "\n";
+            }
+        } catch (IOException exception) {
+            throw new RuntimeError(stmt.keyword, "Could not import module '" + module + "'.");
+        }
+
+        Blink.run(source);
 
         return null;
     }
@@ -482,5 +540,26 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         throw new RuntimeError(expr.name, "Only instances have properties.");
+    }
+
+    @Override
+    public Object visitSubscriptExpr(Expr.Subscript expr) throws RuntimeError {
+        List<Object> list = null;
+        try {
+            list = (List<Object>) evaluate(expr.object);
+        } catch (Exception e) {
+            throw new RuntimeError(expr.closeBracket, "Only arrays can be subscripted.");
+        }
+
+        Object indexObject = evaluate(expr.index);
+        if (!(indexObject instanceof Double)) {
+            throw new RuntimeError(expr.closeBracket, "Only numbers can be used as an index.");
+        }
+
+        int index = ((Double) indexObject).intValue();
+        if (index >= list.size()) {
+            throw new RuntimeError(expr.closeBracket, "Array subscript out of range.");
+        }
+        return list.get(index);
     }
 }

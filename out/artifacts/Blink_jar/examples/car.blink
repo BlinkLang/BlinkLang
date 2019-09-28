@@ -13,5 +13,5 @@ class newCar {
 }
 
 // -> New '2019 Ferrari SF90 Stradale' has been made!
-var makeNewCar = newCar("2019", "Ferrari", "SF90 Stradale");
+var makeNewCar = newCar("2020", "Toyota", "Supra MKV");
 makeNewCar.createCar();
