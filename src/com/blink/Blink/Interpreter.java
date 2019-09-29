@@ -27,74 +27,92 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             public String toString() { return "<native fn>"; }
         });
 
-        // Works as intended. Specify a file.extension inside the native and if you print it it will return the contents.
         globals.define("readFile", new BlinkCallable() {
-            @Override
-            public int arity() { return 1; }
-
-            @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                String file = (String) arguments.get(0);
-                try(FileReader fr = new FileReader(file); BufferedReader br = new BufferedReader(fr)) {
-                    StringBuilder builder = new StringBuilder();
-                    String line;
-                    while((line = br.readLine()) != null) builder.append(line).append("\n");
-                    return builder.toString();
-                } catch(Exception ex) {
-                    return new Error("The specified file ('" + file + "') is either not on the path or is non-existent");
-                }
-            }
-
-            @Override
-            public String toString() { return "<native fn>"; }
-        });
-
-        // Writes to a file. You just need to pass the file.extension and contents
-        globals.define("writeFile", new BlinkCallable() {
-            @Override
-            public int arity() { return 2; }
-
-            @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                String file = (String) arguments.get(0);
-                String contents = (String) arguments.get(1);
-                try {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-                    writer.write(contents);
-                    writer.close();
-                    return "Wrote to file '" + file + "'.";
-                } catch(Exception ex) {
-                    return new Error("The specified file ('" + file + "') is either not on the path or is non-existent");
-                }
-            }
-
-            @Override
-            public String toString() { return "<native fn>"; }
-        });
-
-        // Creates a file, you just need to specify the file name.extension
-        globals.define("createFile", new BlinkCallable() {
             @Override
             public int arity() {
                 return 1;
             }
 
             @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                String file = (String) arguments.get(0);
+            public Object call(Interpreter interpreter,
+                               List<Object> arguments) {
+                String contents;
+
                 try {
-                    File newFile = new File(file);
-                    if (!newFile.exists()) {
-                        newFile.createNewFile();
-                        return "Created file '" + file + "'.";
-                    } else {
-                        throw new Error("The specified file '" + file + "' already exists.");
+                    // File path is 1st argument
+                    BufferedReader br = new BufferedReader(new FileReader(stringify(arguments.get(0))));
+                    String currentLine;
+                    contents = "";
+                    while ((currentLine = br.readLine()) != null) {
+                        contents += currentLine + "\n";
                     }
-                } catch (Exception ex) { return null; }
+                } catch (IOException exception) {
+                    return null;
+                }
+
+                return contents;
             }
 
             @Override
-            public String toString() { return "<native fn>"; }
+            public String toString() {
+                return "<native fn>";
+            }
+        });
+
+        globals.define("writeFile", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 2;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter,
+                               List<Object> arguments) {
+                try {
+                    // File path is 1st argument
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(stringify(arguments.get(0))));
+                    // Data is 2nd argument
+                    bw.write(stringify(arguments.get(1)));
+
+                    bw.close();
+                    return true;
+                } catch (IOException exception) {
+                    return false;
+                }
+            }
+
+            @Override
+            public String toString() {
+                return "<native fn>";
+            }
+        });
+
+        globals.define("appendFile", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 2;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter,
+                               List<Object> arguments) {
+                try {
+                    // File path is 1st argument
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(stringify(arguments.get(0)), true));
+                    // Data is 2nd argument
+                    bw.append(stringify(arguments.get(1)));
+
+                    bw.close();
+                    return true;
+                } catch (IOException exception) {
+                    return false;
+                }
+            }
+
+            @Override
+            public String toString() {
+                return "<native fn>";
+            }
         });
 
         // RNG number calculation
@@ -119,20 +137,53 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             public String toString() { return "<native fn>"; }
         });
 
-        // Import functions from another .blink file over to where this native is being called in
-        // Neat, right?
-        // Oh and this was engineered by the master mind of the BlinkLang org, xaanit
-        globals.define("import", new BlinkCallable() {
+        // Return the size of an array
+        globals.define("sizeof", new BlinkCallable() {
             @Override
-            public int arity() { return 2; }
+            public int arity() {
+                return 1;
+            }
 
             @Override
             public Object call(Interpreter interpreter, List<Object> arguments) {
+                Object object = arguments.get(0);
+
+                if (object instanceof String) {
+                    return (double) ((String) object).length();
+                }
+
+                if (object instanceof  List) {
+                    return (double) ((List) object).size();
+                }
+
                 return null;
             }
 
             @Override
             public String toString() { return "<native fn>"; }
+        });
+
+        // Get input from console!
+        globals.define("input", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                try {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                    return br.readLine();
+                } catch (IOException e) {
+                    return null;
+                }
+            }
+
+            @Override
+            public String toString() {
+                return "<native fn>";
+            }
         });
 
     }
@@ -145,6 +196,50 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } catch (RuntimeError error) {
             Blink.runtimeError(error);
         }
+    }
+
+    @Override
+    public Object visitAllotExpr(Expr.Allot expr) {
+        Expr.Subscript subscript = null;
+        if (expr.object instanceof Expr.Subscript) {
+            subscript = (Expr.Subscript)expr.object;
+        }
+
+        Object listObject = evaluate(subscript.object);
+        if (!(listObject instanceof List)) {
+            throw new RuntimeError(expr.name,
+                    "Only arrays can be subscripted.");
+        }
+
+        List<Object> list = (List)listObject;
+
+        Object indexObject = evaluate(subscript.index);
+        if (!(indexObject instanceof Double)) {
+            throw new RuntimeError(expr.name,
+                    "Only numbers can be used as an array index.");
+        }
+
+        int index = ((Double) indexObject).intValue();
+        if (index >= list.size()) {
+            throw new RuntimeError(expr.name,
+                    "Array index out of range.");
+        }
+
+        Object value = evaluate(expr.value);
+
+        list.set(index, value);
+        return value;
+    }
+
+    @Override
+    public Object visitArrayExpr(Expr.Array expr) {
+        List<Object> values = new ArrayList<>();
+        if (expr.values != null) {
+            for (Expr value : expr.values) {
+                values.add(evaluate(value));
+            }
+        }
+        return values;
     }
 
     @Override
@@ -252,7 +347,20 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     private String stringify(Object object) {
-        if (object == null) return "nil";
+        if (object == null) return "null";
+
+        if (object instanceof List) {
+            String text = "[";
+            List<Object> list = (List<Object>)object;
+            for (int i = 0; i < list.size(); i++) {
+                text += stringify(list.get(i));
+                if (i != list.size() - 1) {
+                    text += ", ";
+                }
+            }
+            text += "]";
+            return text;
+        }
 
         if (object instanceof Double) {
             String text = object.toString();
@@ -360,6 +468,30 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitImportStmt(Stmt.Import stmt) {
+        Object module = evaluate(stmt.module);
+        if (!(module instanceof String)) {
+            throw new RuntimeError(stmt.keyword, "Module name must be a string.");
+        }
+
+        String source = "";
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader((String)module));
+            String currentLine;
+            while ((currentLine = br.readLine()) != null) {
+                source += currentLine + "\n";
+            }
+        } catch (IOException exception) {
+            throw new RuntimeError(stmt.keyword, "Could not import module '" + module + "'.");
+        }
+
+        Blink.run(source);
+
+        return null;
+    }
+
+    @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
         Object value = evaluate(stmt.expression);
         System.out.println(stringify(value));
@@ -428,8 +560,29 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case BANG_EQUAL: return !isEqual(left, right);
             case EQUAL_EQUAL: return isEqual(left, right);
             case MINUS:
-                checkNumberOperands(expr.operator, left, right);
-                return (double)left - (double)right;
+                if (left instanceof Double && right instanceof Double) {
+                    return (double)left - (double)right;
+                }
+
+                if (left instanceof List && right instanceof Double) {
+                    List list = (List)left;
+                    List<Object> newList = new ArrayList<>();
+                    int newSize = list.size() - ((Double) right).intValue();
+
+                    if (newSize < 0) {
+                        throw new RuntimeError(expr.operator,
+                                "Cannot remove " + ((Double) right).intValue() + " elements from an array of size " +
+                                        list.size() + ".");
+                    }
+
+                    for (int index = 0; index < newSize; ++index) {
+                        newList.add(list.get(index));
+                    }
+
+                    return newList;
+                }
+
+                throw new RuntimeError(expr.operator, "Invalid operands to binary operator '-'.");
             case PLUS:
                 if (left instanceof Double && right instanceof Double) {
                     return (double)left + (double)right;
@@ -439,7 +592,13 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     return (String)left + (String)right;
                 }
 
-                throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
+                if (left instanceof List) {
+                    List list = (List)left;
+                    list.add(right);
+                    return left;
+                }
+
+                throw new RuntimeError(expr.operator, "Invalid operands to binary operator '+'.");
             case SLASH:
                 checkNumberOperands(expr.operator, left, right);
                 return (double)left / (double)right;
@@ -461,7 +620,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         if (!(callee instanceof BlinkCallable)) {
-            throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+            throw new RuntimeError(expr.paren, "Only functions and classes are callable.");
         }
 
         BlinkCallable function = (BlinkCallable)callee;
@@ -482,5 +641,44 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         throw new RuntimeError(expr.name, "Only instances have properties.");
+    }
+
+    @Override
+    public Object visitTernaryExpr(Expr.Ternary expr) {
+        Object left = evaluate(expr.left);
+        Object middle = evaluate(expr.middle);
+        Object right = evaluate(expr.right);
+
+        if (expr.leftOper.type == TokenType.QUESTION &&
+                expr.rightOper.type == TokenType.COLON) {
+            if (isTruthy(left)) {
+                return middle;
+            }
+
+            return right;
+        }
+
+        return null;
+    }
+
+    @Override
+    public Object visitSubscriptExpr(Expr.Subscript expr) throws RuntimeError {
+        Object listObject = evaluate(expr.object);
+        if (!(listObject instanceof List)) {
+            throw new RuntimeError(expr.name, "Only arrays can be subscripted.");
+        }
+
+        List list = (List)listObject;
+
+        Object indexObject = evaluate(expr.index);
+        if (!(indexObject instanceof Double)) {
+            throw new RuntimeError(expr.name, "Only numbers can be used as an index.");
+        }
+
+        int index = ((Double) indexObject).intValue();
+        if (index >= list.size()) {
+            throw new RuntimeError(expr.name, "Array index out of range.");
+        }
+        return list.get(index);
     }
 }

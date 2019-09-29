@@ -8,7 +8,8 @@ class BlinkClass implements BlinkCallable {
     final BlinkClass superclass;
     private final Map<String, BlinkFunction> methods;
 
-    BlinkClass(String name, BlinkClass superclass, Map<String, BlinkFunction> methods) {
+    BlinkClass(String name, BlinkClass superclass,
+               Map<String, BlinkFunction> methods) {
         this.superclass = superclass;
         this.name = name;
         this.methods = methods;

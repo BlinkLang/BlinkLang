@@ -52,7 +52,7 @@ class Parser {
             superclass = new Expr.Variable(previous());
         }
 
-        consume(LEFT_BRACE, "Expect '}' before class body.");
+        consume(LEFT_BRACE, "Expect '{' before class body.");
 
         List<Stmt.Function> methods = new ArrayList<>();
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
@@ -65,6 +65,7 @@ class Parser {
     }
 
     private Stmt statement() {
+        if (match(IMPORT)) return importStatement();
         if (match(FOR)) return forStatement();
         if (match(IF)) return ifStatement();
         if (match(PRINT)) return printStatement();
@@ -73,6 +74,13 @@ class Parser {
         if (match(LEFT_BRACE)) return new Stmt.Block(block());
 
         return expressionStatement();
+    }
+
+    private Stmt importStatement() {
+        Token keyword = previous();
+        Expr module = expression();
+        consume(SEMICOLON, "Expected ';' after module name.");
+        return new Stmt.Import(keyword, module);
     }
 
     private Stmt forStatement() {
@@ -208,7 +216,7 @@ class Parser {
     }
 
     private Expr assignment() {
-        Expr expr = or();
+        Expr expr = ternary();
 
         if (match(EQUAL)) {
             Token equals = previous();
@@ -220,9 +228,32 @@ class Parser {
             } else if (expr instanceof Expr.Get) {
                 Expr.Get get = (Expr.Get)expr;
                 return new Expr.Set(get.object, get.name, value);
+            } else if (expr instanceof Expr.Subscript) {
+                Token name = ((Expr.Subscript)expr).name;
+                return new Expr.Allot(expr, name, value);
             }
 
             error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
+
+    private Expr ternary() {
+        Expr expr = or();
+
+        if (match(QUESTION)) {
+
+            Token leftOper = previous();
+            Expr middle = or();
+            if (match(COLON)) {
+                Token rightOper = previous();
+                Expr right = ternary();
+                expr = new Expr.Ternary(expr, leftOper, middle, rightOper, right);
+            } else {
+                throw error(peek(), "Expected ':' after ternary operator '?'.");
+
+            }
         }
 
         return expr;
@@ -327,13 +358,18 @@ class Parser {
 
     private Expr call() {
         Expr expr = primary();
+        Token exprName = previous();
 
         while(true) {
             if (match(LEFT_PAREN)) {
                 expr = finishCall(expr);
             } else if (match(DOT)) {
-                Token name =  consume(IDENTIFIER, "Expect property name after '.'.");
+                Token name = consume(IDENTIFIER, "Expect property name after '.'.");
                 expr = new Expr.Get(expr, name);
+            } else if (match(LEFT_SQUARE)) {
+                Expr index = primary();
+                Token closeBracket = consume(RIGHT_SQUARE, "Expected ']' after subscript index.");
+                expr = new Expr.Subscript(expr, exprName, index);
             } else {
                 break;
             }
@@ -362,6 +398,21 @@ class Parser {
 
         if (match(IDENTIFIER)) {
             return new Expr.Variable(previous());
+        }
+
+        if (match(LEFT_SQUARE)) {
+            List<Expr> values = new ArrayList<>();
+            if (match(RIGHT_SQUARE)) {
+                return new Expr.Array(null);
+            }
+            while (!match(RIGHT_SQUARE)) {
+                Expr value = assignment();
+                values.add(value);
+                if (peek().type != RIGHT_SQUARE) {
+                    consume(COMMA, "Expected comma before next expression.");
+                }
+            }
+            return new Expr.Array(values);
         }
 
         if (match(LEFT_PAREN)) {

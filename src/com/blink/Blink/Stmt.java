@@ -9,6 +9,7 @@ abstract class Stmt {
     R visitExpressionStmt(Expression stmt);
     R visitFunctionStmt(Function stmt);
     R visitIfStmt(If stmt);
+    R visitImportStmt(Import stmt);
     R visitPrintStmt(Print stmt);
     R visitReturnStmt(Return stmt);
     R visitVarStmt(Var stmt);
@@ -80,6 +81,19 @@ abstract class Stmt {
     final Expr condition;
     final Stmt thenBranch;
     final Stmt elseBranch;
+  }
+  static class Import extends Stmt {
+    Import(Token keyword, Expr module) {
+      this.keyword = keyword;
+      this.module = module;
+    }
+
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitImportStmt(this);
+    }
+
+    final Token keyword;
+    final Expr module;
   }
   static class Print extends Stmt {
     Print(Expr expression) {

@@ -24,7 +24,11 @@ public class GenerateAst {
                 "Super : Token keyword, Token method",
                 "This : Token keyword",
                 "Unary : Token operator, Expr right",
-                "Variable : Token name"
+                "Variable : Token name",
+                "Array : List<Expr> values",
+                "Subscript : Expr object, Token name, Expr index",
+                "Allot : Expr object, Token name, Expr value",
+                "Ternary : Expr left, Token leftOper, Expr middle, Token rightOper, Expr right"
         ));
 
         defineAst(outputDir, "Stmt", Arrays.asList(
@@ -34,6 +38,7 @@ public class GenerateAst {
                 "Expression : Expr expression",
                 "Function : Token name, List<Token> params, List<Stmt> body",
                 "If : Expr condition, Stmt thenBranch, Stmt elseBranch",
+                "Import : Token keyword, Expr module",
                 "Print : Expr expression",
                 "Return : Token keyword, Expr value",
                 "Var : Token name, Expr initializer",
