@@ -31,7 +31,7 @@ public class Blink {
 
         clearScreen();
         System.out.println();
-        System.out.println("Blink JVM 1.0.0");
+        System.out.println("Blink JVM 1.2.0");
         System.out.println();
 
         run(new String(bytes, Charset.defaultCharset()));
@@ -48,7 +48,7 @@ public class Blink {
 
         clearScreen();
         System.out.println();
-        System.out.println("Blink JVM 1.0.0");
+        System.out.println("Blink JVM 1.2.0");
         System.out.println("Exit anytime by pressing CTRL + C.");
         System.out.println();
 

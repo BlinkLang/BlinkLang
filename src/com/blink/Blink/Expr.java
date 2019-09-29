@@ -18,6 +18,8 @@ abstract class Expr {
     R visitVariableExpr(Variable expr);
     R visitArrayExpr(Array expr);
     R visitSubscriptExpr(Subscript expr);
+    R visitAllotExpr(Allot expr);
+    R visitTernaryExpr(Ternary expr);
   }
   static class Assign extends Expr {
     Assign(Token name, Expr value) {
@@ -187,9 +189,9 @@ abstract class Expr {
     final List<Expr> values;
   }
   static class Subscript extends Expr {
-    Subscript(Expr object, Token closeBracket, Expr index) {
+    Subscript(Expr object, Token name, Expr index) {
       this.object = object;
-      this.closeBracket = closeBracket;
+      this.name = name;
       this.index = index;
     }
 
@@ -198,8 +200,42 @@ abstract class Expr {
     }
 
     final Expr object;
-    final Token closeBracket;
+    final Token name;
     final Expr index;
+  }
+  static class Allot extends Expr {
+    Allot(Expr object, Token name, Expr value) {
+      this.object = object;
+      this.name = name;
+      this.value = value;
+    }
+
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitAllotExpr(this);
+    }
+
+    final Expr object;
+    final Token name;
+    final Expr value;
+  }
+  static class Ternary extends Expr {
+    Ternary(Expr left, Token leftOper, Expr middle, Token rightOper, Expr right) {
+      this.left = left;
+      this.leftOper = leftOper;
+      this.middle = middle;
+      this.rightOper = rightOper;
+      this.right = right;
+    }
+
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitTernaryExpr(this);
+    }
+
+    final Expr left;
+    final Token leftOper;
+    final Expr middle;
+    final Token rightOper;
+    final Expr right;
   }
 
   abstract <R> R accept(Visitor<R> visitor);

@@ -88,6 +88,9 @@ class Scanner {
             case '+' : addToken(PLUS); break;
             case ';' : addToken(SEMICOLON); break;
             case '*' : addToken(STAR); break;
+            case ':' : addToken(COLON); break;
+            case '?' : addToken(QUESTION); break;
+
             case '!' : addToken(match('=') ? BANG_EQUAL : BANG); break;
             case '=' : addToken(match('=') ? EQUAL_EQUAL : EQUAL); break;
             case '<' : addToken(match('=') ? LESS_EQUAL : LESS); break;
@@ -106,12 +109,16 @@ class Scanner {
 
             case '\n':
                 ++line;
-                Token lastToken = tokens.get(tokens.size() - 1);
-                if (openParen == 0 &&
-                        lastToken.type != SEMICOLON &&
-                        lastToken.type != LEFT_BRACE &&
-                        lastToken.type != RIGHT_BRACE)
-                    addToken(SEMICOLON);
+                if (tokens.size() == 0) {
+                    ++line;
+                } else {
+                   Token lastToken  = tokens.get(tokens.size() - 1);
+                    if (openParen == 0 && openSquareBrackets == 0 &&
+                            lastToken.type != SEMICOLON &&
+                            lastToken.type != LEFT_BRACE &&
+                            lastToken.type != RIGHT_BRACE)
+                        addToken(SEMICOLON);
+                }
 
                 break;
 
@@ -126,14 +133,14 @@ class Scanner {
                 } else if (isAlphaOrUnderscore(c)) {
                     identifier();
                 } else {
-                    Blink.error(line, "Unexpected character.");
+                    Blink.error(line, "Unexpected character '" + c + "'.");
                 }
                 break;
         }
     }
 
     private void blockComment() {
-        while(peek() != '*' && !isAtEnd()) {
+        while (peek() != '*' && !isAtEnd()) {
             if (peek() == '\n') ++line;
             if (peek() == '/') {
                 if (peekNext() == '*') {
@@ -144,9 +151,8 @@ class Scanner {
             }
             advance();
         }
-
         if (isAtEnd()) {
-            Blink.error(line, "Unterminated block comment.");
+            Blink.error(line, "Unterminated block comment");
         }
 
         advance();
@@ -181,7 +187,8 @@ class Scanner {
 
     private void string() {
         while (peek() != '"' && !isAtEnd()) {
-            if (peek() == '\n') line++;
+            if (peek() == '\n') ++line;
+            if (peek() == '\\' && peekNext() == '"') advance();
             advance();
         }
 
@@ -200,7 +207,7 @@ class Scanner {
         if (isAtEnd()) return false;
         if (source.charAt(current) != expected) return false;
 
-        current++;
+        ++current;
         return true;
     }
 
@@ -225,10 +232,11 @@ class Scanner {
     }
 
     private boolean isAlphaNumericOrUnderscore(char c) {
-        return isAlphaOrUnderscore(c) || isDigit(c);
+         return isAlphaOrUnderscore(c) || isDigit(c);
     }
 
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
+
 }
