@@ -347,7 +347,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     private String stringify(Object object) {
-        if (object == null) return "nil";
+        if (object == null) return "null";
 
         if (object instanceof List) {
             String text = "[";
