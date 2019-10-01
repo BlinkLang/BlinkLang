@@ -120,9 +120,10 @@ abstract class Stmt {
     final Expr value;
   }
   static class Var extends Stmt {
-    Var(Token name, Expr initializer) {
+    Var(Token name, Expr initializer, Token type) {
       this.name = name;
       this.initializer = initializer;
+      this.type = type;
     }
 
     <R> R accept(Visitor<R> visitor) {
@@ -131,6 +132,7 @@ abstract class Stmt {
 
     final Token name;
     final Expr initializer;
+    final Token type;
   }
   static class While extends Stmt {
     While(Expr condition, Stmt body) {

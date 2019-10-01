@@ -1,6 +1,5 @@
 package com.blink.Blink;
 
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,6 +143,8 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         if (stmt.initializer != null) {
             resolve(stmt.initializer);
         }
+
+        // ADD TYPE CHECKS
 
         define(stmt.name);
         return null;

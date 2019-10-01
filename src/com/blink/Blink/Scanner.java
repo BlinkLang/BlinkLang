@@ -17,10 +17,11 @@ class Scanner {
     private int openParen = 0;
     private int openSquareBrackets = 0;
 
-    private static final Map<String, TokenType> keywords;
+    public static final Map<String, TokenType> keywords;
 
     static {
         keywords = new HashMap<>();
+        // Keywords
         keywords.put("and", AND);
         keywords.put("class", CLASS);
         keywords.put("else", ELSE);
@@ -39,6 +40,7 @@ class Scanner {
         keywords.put("while", WHILE);
         keywords.put("inherits", INHERITS);
         keywords.put("import", IMPORT);
+        keywords.put("static", STATIC);
     }
 
     Scanner(String source) {

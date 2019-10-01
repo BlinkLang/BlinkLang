@@ -157,15 +157,22 @@ class Parser {
     }
 
     private Stmt varDeclaration() {
-        Token name = consume(IDENTIFIER, "Expect variable name.");
+        // needs work
+        Token name = consume(IDENTIFIER, "Expected variable name.");
 
         Expr initializer = null;
         if (match(EQUAL)) {
-            initializer = expression();
-        }
+            initializer = assignment();
 
-        consume(SEMICOLON, "Expect ';' after variable declaration.");
-        return new Stmt.Var(name, initializer);
+            if (match(COLON)) {
+                    Token type = consume(IDENTIFIER, "Expected a type definition.");
+                    consume(SEMICOLON, "Expected ';' after variable declaration");
+                    return new Stmt.Var(name, initializer, type);
+            } else {
+                throw error(peek(), "Expected ':' after variable value.");
+            }
+        }
+        return null;
     }
 
     private Stmt whileStatement() {
@@ -235,7 +242,6 @@ class Parser {
 
             error(equals, "Invalid assignment target.");
         }
-
         return expr;
     }
 

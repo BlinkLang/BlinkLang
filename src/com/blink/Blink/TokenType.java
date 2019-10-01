@@ -17,7 +17,7 @@ enum TokenType {
     // keywords
     AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
     PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
-    INHERITS, IMPORT,
+    INHERITS, IMPORT, STATIC,
 
     // end of file
     EOF

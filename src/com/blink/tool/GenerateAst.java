@@ -41,7 +41,7 @@ public class GenerateAst {
                 "Import : Token keyword, Expr module",
                 "Print : Expr expression",
                 "Return : Token keyword, Expr value",
-                "Var : Token name, Expr initializer",
+                "Var : Token name, Expr initializer, Token type",
                 "While : Expr condition, Stmt body"
         ));
     }
