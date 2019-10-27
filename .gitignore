@@ -1,8 +1,12 @@
 # Project exclude paths
 /out/
 /Blink.iml
+/Blink.png
 /.idea
 !/out
 /out/production
 !/src/com
 /src/META-INF
+/target
+/pom.xml
+/Splash.md
