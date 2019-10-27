@@ -1,6 +1,7 @@
 package com.blink.Blink;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.io.BufferedWriter;
@@ -10,17 +11,53 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private Environment environment = globals;
     private final Map<Expr, Integer> locals = new HashMap<>();
 
+    private InputStreamReader getcStream = new InputStreamReader(System.in, StandardCharsets.UTF_8);
+
     Interpreter() {
         // Returns a formatted date and time string
-        globals.define("time", new BlinkCallable() {
+        globals.define("dateAndTime", new BlinkCallable() {
             @Override
             public int arity() { return 0; }
 
             @Override
             public Object call(Interpreter interpreter, List<Object> arguments) {
-                Date date = new Date();
+                Date dateAndTime = new Date();
                 SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+                return formatter.format(dateAndTime);
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        globals.define("date", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                Date date = new Date();
+                SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
                 return formatter.format(date);
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        globals.define("time", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                Date time = new Date();
+                SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+                return formatter.format(time);
             }
 
             @Override
@@ -116,7 +153,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         });
 
         // RNG number calculation
-        globals.define("randomNumber", new BlinkCallable() {
+        globals.define("random", new BlinkCallable() {
             @Override
             public int arity() {
                 return 2;
@@ -186,6 +223,91 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         });
 
+        globals.define("getc", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                try {
+                    int c = getcStream.read();
+                    if (c < 0) {
+                        return (double)-1;
+                    }
+                    return (double)c;
+                } catch (IOException error) {
+                    return (double)-1;
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        globals.define("chr", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 1;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return Character.toString((char)(double)arguments.get(0));
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        globals.define("exit", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 1;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                System.exit((int)(double)arguments.get(0));
+                return null;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        globals.define("print_error", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 1;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                System.err.println((String)arguments.get(0));
+                return null;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+
+        globals.define("put", new BlinkCallable() {
+            @Override
+            public int arity() {
+                return 1;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                System.out.println(stringify(arguments.get(0)));
+                return null;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
     }
 
     void interpret(List<Stmt> statements) {
